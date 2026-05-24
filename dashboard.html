@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Vendas por período</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4f;
+      --text: #e8eef6;
+      --muted: #8b9cb3;
+      --accent: #3d9cf5;
+      --accent-dim: rgba(61, 156, 245, 0.15);
+      --success: #34d399;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 2rem 1rem 3rem;
+    }
+    .shell {
+      width: 100%;
+      max-width: 920px;
+    }
+    header {
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0 0 0.35rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    header p {
+      margin: 0;
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+    .scorecard {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem 1.75rem;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
+    }
+    .scorecard-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .scorecard-value {
+      font-size: clamp(1.75rem, 6vw, 2.35rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: var(--text);
+      background: linear-gradient(135deg, #fff 0%, #b8d4f0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .scorecard-meta {
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8125rem;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+    }
+    .scorecard-meta span strong {
+      color: var(--success);
+      font-weight: 600;
+    }
+    .state {
+      margin-top: 1rem;
+      min-height: 1.25rem;
+      font-size: 0.8125rem;
+      text-align: center;
+      color: var(--muted);
+    }
+    .state.error {
+      color: #f87171;
+    }
+    .hint {
+      margin-top: 2rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.5;
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hint code {
+      background: var(--surface);
+      padding: 0.15rem 0.4rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-size: 0.7rem;
+    }
+    .chart-panel {
+      margin-top: 1.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem 1.25rem 1.25rem;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
+    }
+    .chart-panel h2 {
+      margin: 0 0 0.35rem;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .chart-panel .subtitle {
+      margin: 0 0 1rem;
+      font-size: 0.8125rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .chart-panel .subtitle code {
+      font-size: 0.78em;
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--accent);
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 0.75rem 1rem;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .filters label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .filters input[type="month"] {
+      font-family: inherit;
+      font-size: 0.875rem;
+      padding: 0.45rem 0.6rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      min-width: 11rem;
+    }
+    .filters button {
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--accent);
+      background: var(--accent-dim);
+      color: var(--accent);
+      cursor: pointer;
+    }
+    .filters button:hover {
+      background: rgba(61, 156, 245, 0.28);
+    }
+    .chart-wrap {
+      position: relative;
+      height: min(360px, 55vw);
+      min-height: 240px;
+    }
+    .chart-note {
+      margin-top: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .report-filters {
+      margin-bottom: 1.5rem;
+      display: grid;
+      gap: 1rem;
+    }
+    @media (min-width: 640px) {
+      .report-filters {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .filter-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
+      text-align: left;
+    }
+    .filter-card h3 {
+      margin: 0 0 0.35rem;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+    .filter-card .filter-help {
+      margin: 0 0 0.75rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .filter-card label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .filter-card select {
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 0.5rem 0.65rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <h1>Relatório de vendas</h1>
+      <p>Consolidado a partir da base CSV</p>
+    </header>
+    <div class="report-filters" id="reportFilters" hidden>
+      <div class="filter-card">
+        <h3>Filtro na base de dados</h3>
+        <p class="filter-help">
+          Equivale ao filtro na fonte: restringe quais linhas entram nas agregações (total e gráfico), como se a consulta já viesse filtrada.
+        </p>
+        <label for="baseFilterCategoria">
+          Categoria
+          <select id="baseFilterCategoria" aria-describedby="helpBaseFilter"></select>
+        </label>
+        <p id="helpBaseFilter" class="filter-help" style="margin-bottom: 0; margin-top: 0.5rem">
+          Escolha uma categoria ou “Todas” para usar o conjunto completo.
+        </p>
+      </div>
+      <div class="filter-card">
+        <h3>Controle no relatório</h3>
+        <p class="filter-help">
+          Controle de filtro para o leitor: refina a visualização sobre o conjunto já definido pela base (acima).
+        </p>
+        <label for="controlEstado">
+          Estado (UF)
+          <select id="controlEstado" aria-describedby="helpControl"></select>
+        </label>
+        <p id="helpControl" class="filter-help" style="margin-bottom: 0; margin-top: 0.5rem">
+          Escolha um estado ou “Todos” para não restringir por UF.
+        </p>
+      </div>
+    </div>
+    <div class="scorecard" aria-live="polite">
+      <div class="scorecard-label">Total de vendas</div>
+      <div class="scorecard-value" id="totalVendas">—</div>
+      <div class="scorecard-meta" id="meta" hidden>
+        <span id="linhasMeta"></span>
+        <span id="arquivoMeta"></span>
+      </div>
+    </div>
+    <div class="chart-panel" id="chartPanel" hidden>
+      <h2>Evolução das vendas por mês</h2>
+      <p class="subtitle">
+        <strong>Ex. 4:</strong> barras por mês usando <strong>campo calculado</strong> <code>mes_ref</code> (mês de referência
+        derivado de <code>data_venda</code>) após <strong>ajuste na base</strong> — normalização da coluna de data para
+        <code>AAAA-MM-DD</code>. Métrica: soma de <strong>valor_total</strong>.
+      </p>
+      <div class="filters">
+        <label>
+          Mês inicial
+          <input type="month" id="filterStart" />
+        </label>
+        <label>
+          Mês final
+          <input type="month" id="filterEnd" />
+        </label>
+        <button type="button" id="filterReset">Mostrar tudo</button>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chartVendas" aria-label="Gráfico de barras de vendas por mês"></canvas>
+      </div>
+      <p class="chart-note" id="chartNote"></p>
+    </div>
+    <p class="state" id="state">Carregando dados…</p>
+    <p class="hint">
+      Se o arquivo não carregar ao abrir direto no navegador, sirva esta pasta com
+      <code>python3 -m http.server 8080</code> e acesse
+      <code>http://localhost:8080/dashboard.html</code>.
+    </p>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    (function () {
+      var CSV_NAME = "base_vendas_willian_de_sousa_ribeiro.csv";
+
+      function parseCsvLine(line) {
+        var out = [];
+        var cur = "";
+        var i = 0;
+        while (i < line.length) {
+          var c = line[i];
+          if (c === '"') {
+            i++;
+            while (i < line.length) {
+              if (line[i] === '"') {
+                if (line[i + 1] === '"') {
+                  cur += '"';
+                  i += 2;
+                } else {
+                  i++;
+                  break;
+                }
+              } else {
+                cur += line[i];
+                i++;
+              }
+            }
+          } else if (c === ",") {
+            out.push(cur);
+            cur = "";
+            i++;
+          } else {
+            cur += c;
+            i++;
+          }
+        }
+        out.push(cur);
+        return out;
+      }
+
+      /**
+       * Ex. 4 — Ajuste na base: normaliza o texto bruto de `data_venda` para ISO `AAAA-MM-DD`
+       * (equivalente a preparar a coluna na fonte antes de métricas e gráficos).
+       */
+      function ajustarDataVendaBase(raw) {
+        var s = (raw || "").trim();
+        if (!s) return null;
+        s = s.replace(/\s+/g, "");
+        if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+        var m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+        if (m) {
+          var dia = String(parseInt(m[1], 10)).padStart(2, "0");
+          var mes = String(parseInt(m[2], 10)).padStart(2, "0");
+          var ano = m[3];
+          return ano + "-" + mes + "-" + dia;
+        }
+        var ts = Date.parse(s);
+        if (!isNaN(ts)) {
+          var d = new Date(ts);
+          var y = d.getFullYear();
+          var mo = String(d.getMonth() + 1).padStart(2, "0");
+          var da = String(d.getDate()).padStart(2, "0");
+          return y + "-" + mo + "-" + da;
+        }
+        return null;
+      }
+
+      /**
+       * Ex. 4 — Campo calculado: `mes_ref` = primeiro dia do mês da venda, representado como `AAAA-MM`
+       * para agrupamento temporal (equivalente a FORMAT_DATE / TRUNC month no Looker Studio).
+       */
+      function campoCalculadoMesRef(dataIsoAaaaMmDd) {
+        if (!dataIsoAaaaMmDd || dataIsoAaaaMmDd.length < 10) return null;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dataIsoAaaaMmDd)) return null;
+        return dataIsoAaaaMmDd.slice(0, 7);
+      }
+
+      /** Encadeia ajuste na base + campo calculado `mes_ref` usado no gráfico de barras. */
+      function mesReferenciaVenda(rawDataVenda) {
+        var iso = ajustarDataVendaBase(rawDataVenda);
+        return campoCalculadoMesRef(iso);
+      }
+
+      function parseRows(text) {
+        var lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter(function (l) {
+          return l.length > 0;
+        });
+        if (lines.length < 2) {
+          return { rows: [], categorias: [], estados: [] };
+        }
+
+        var header = parseCsvLine(lines[0]);
+        var idxValor = header.indexOf("valor_total");
+        var idxData = header.indexOf("data_venda");
+        var idxEstado = header.indexOf("estado");
+        var idxCategoria = header.indexOf("categoria");
+        if (idxValor === -1) throw new Error('Coluna "valor_total" não encontrada.');
+        if (idxData === -1) throw new Error('Coluna "data_venda" não encontrada.');
+        if (idxEstado === -1) throw new Error('Coluna "estado" não encontrada.');
+        if (idxCategoria === -1) throw new Error('Coluna "categoria" não encontrada.');
+
+        var rows = [];
+        var catSet = {};
+        var ufSet = {};
+
+        for (var r = 1; r < lines.length; r++) {
+          var cells = parseCsvLine(lines[r]);
+          if (cells.length <= idxValor) continue;
+          var rawVal = cells[idxValor].trim().replace(",", ".");
+          var n = parseFloat(rawVal);
+          if (isNaN(n)) continue;
+
+          var estado = (cells[idxEstado] || "").trim();
+          var categoria = (cells[idxCategoria] || "").trim();
+
+          if (categoria) catSet[categoria] = true;
+          if (estado) ufSet[estado] = true;
+
+          rows.push({
+            valor: n,
+            monthKey: mesReferenciaVenda(cells[idxData] || ""),
+            estado: estado,
+            categoria: categoria,
+          });
+        }
+
+        var categorias = Object.keys(catSet).sort();
+        var estados = Object.keys(ufSet).sort();
+        return { rows: rows, categorias: categorias, estados: estados };
+      }
+
+      function aggregateFromRows(rowList) {
+        var total = 0;
+        var byMonth = {};
+        var skippedDates = 0;
+        for (var i = 0; i < rowList.length; i++) {
+          var row = rowList[i];
+          total += row.valor;
+          if (!row.monthKey) {
+            skippedDates++;
+            continue;
+          }
+          byMonth[row.monthKey] = (byMonth[row.monthKey] || 0) + row.valor;
+        }
+        return {
+          total: total,
+          rows: rowList.length,
+          byMonth: byMonth,
+          skippedDates: skippedDates,
+        };
+      }
+
+      function filterRows(rows, categoriaBase, estadoControle) {
+        return rows.filter(function (row) {
+          if (categoriaBase && row.categoria !== categoriaBase) return false;
+          if (estadoControle && row.estado !== estadoControle) return false;
+          return true;
+        });
+      }
+
+      function sortedMonthKeys(byMonth) {
+        return Object.keys(byMonth).sort();
+      }
+
+      function labelMesPt(key) {
+        var parts = key.split("-");
+        var y = parts[0];
+        var m = parseInt(parts[1], 10);
+        var meses = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+        return meses[m - 1] + "/" + y;
+      }
+
+      function filterMonths(keys, startKey, endKey) {
+        return keys.filter(function (k) {
+          if (startKey && k < startKey) return false;
+          if (endKey && k > endKey) return false;
+          return true;
+        });
+      }
+
+      function formatBRL(value) {
+        return new Intl.NumberFormat("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(value);
+      }
+
+      var stateEl = document.getElementById("state");
+      var totalEl = document.getElementById("totalVendas");
+      var metaEl = document.getElementById("meta");
+      var linhasMeta = document.getElementById("linhasMeta");
+      var arquivoMeta = document.getElementById("arquivoMeta");
+      var chartPanel = document.getElementById("chartPanel");
+      var chartCanvas = document.getElementById("chartVendas");
+      var chartNote = document.getElementById("chartNote");
+      var filterStart = document.getElementById("filterStart");
+      var filterEnd = document.getElementById("filterEnd");
+      var filterReset = document.getElementById("filterReset");
+      var reportFilters = document.getElementById("reportFilters");
+      var baseFilterCategoria = document.getElementById("baseFilterCategoria");
+      var controlEstado = document.getElementById("controlEstado");
+
+      var chartInstance = null;
+      var fullByMonth = null;
+      var allKeys = [];
+      var allRowsParsed = null;
+
+      function fillSelect(selectEl, items, allLabel) {
+        selectEl.innerHTML = "";
+        var opt0 = document.createElement("option");
+        opt0.value = "";
+        opt0.textContent = allLabel;
+        selectEl.appendChild(opt0);
+        for (var i = 0; i < items.length; i++) {
+          var o = document.createElement("option");
+          o.value = items[i];
+          o.textContent = items[i];
+          selectEl.appendChild(o);
+        }
+      }
+
+      function rebuildFromFilters() {
+        if (!allRowsParsed) return;
+        var cat = baseFilterCategoria.value;
+        var uf = controlEstado.value;
+        var slice = filterRows(allRowsParsed, cat, uf);
+        var agg = aggregateFromRows(slice);
+
+        totalEl.textContent = formatBRL(agg.total);
+        linhasMeta.innerHTML =
+          "<strong>" + agg.rows.toLocaleString("pt-BR") + "</strong> registros após filtros da base e do controle";
+        arquivoMeta.textContent = "Fonte: " + CSV_NAME;
+
+        fullByMonth = agg.byMonth;
+        allKeys = sortedMonthKeys(fullByMonth);
+
+        if (allKeys.length) {
+          filterStart.min = allKeys[0];
+          filterStart.max = allKeys[allKeys.length - 1];
+          filterEnd.min = allKeys[0];
+          filterEnd.max = allKeys[allKeys.length - 1];
+        }
+
+        applyFilters();
+
+        if (agg.skippedDates > 0) {
+          stateEl.textContent =
+            "Filtros aplicados. " +
+            agg.skippedDates.toLocaleString("pt-BR") +
+            " linha(s) sem mês válido no gráfico (valor entra no total).";
+        } else {
+          stateEl.textContent = "Filtros aplicados.";
+        }
+        stateEl.classList.remove("error");
+      }
+
+      function renderChart(byMonth, keys) {
+        var labels = keys.map(labelMesPt);
+        var data = keys.map(function (k) {
+          return byMonth[k];
+        });
+
+        if (chartInstance) {
+          chartInstance.destroy();
+          chartInstance = null;
+        }
+
+        var ctx = chartCanvas.getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "Vendas no mês",
+                data: data,
+                backgroundColor: "rgba(61, 156, 245, 0.55)",
+                borderColor: "#3d9cf5",
+                borderWidth: 1,
+                borderRadius: 4,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function (ctx) {
+                    return formatBRL(ctx.raw);
+                  },
+                },
+              },
+            },
+            scales: {
+              x: {
+                grid: { color: "rgba(45, 58, 79, 0.6)" },
+                ticks: { color: "#8b9cb3", maxRotation: 45, minRotation: 0 },
+              },
+              y: {
+                grid: { color: "rgba(45, 58, 79, 0.6)" },
+                ticks: {
+                  color: "#8b9cb3",
+                  callback: function (v) {
+                    if (v >= 1e9) return "R$ " + (v / 1e9).toFixed(1) + " bi";
+                    if (v >= 1e6) return "R$ " + (v / 1e6).toFixed(1) + " mi";
+                    if (v >= 1e3) return "R$ " + (v / 1e3).toFixed(0) + " mil";
+                    return "R$ " + v;
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+
+      function applyFilters() {
+        if (fullByMonth == null) return;
+        if (!allKeys.length) {
+          chartNote.textContent =
+            "Sem meses para exibir com os filtros atuais (base, controle ou período). Ajuste as seleções.";
+          if (chartInstance) {
+            chartInstance.destroy();
+            chartInstance = null;
+          }
+          return;
+        }
+        var start = filterStart.value || null;
+        var end = filterEnd.value || null;
+        var keys = filterMonths(allKeys, start, end);
+        if (!keys.length) {
+          chartNote.textContent =
+            "Nenhum mês no intervalo de meses. Ajuste mês inicial/final ou clique em Mostrar tudo.";
+          if (chartInstance) {
+            chartInstance.destroy();
+            chartInstance = null;
+          }
+          return;
+        }
+        renderChart(fullByMonth, keys);
+        chartNote.textContent =
+          "Exibindo " +
+          keys.length +
+          " mês(es)" +
+          (start || end ? " no intervalo de meses." : ".");
+      }
+
+      filterStart.addEventListener("change", applyFilters);
+      filterEnd.addEventListener("change", applyFilters);
+      filterReset.addEventListener("click", function () {
+        filterStart.value = "";
+        filterEnd.value = "";
+        applyFilters();
+      });
+
+      baseFilterCategoria.addEventListener("change", rebuildFromFilters);
+      controlEstado.addEventListener("change", rebuildFromFilters);
+
+      fetch(CSV_NAME)
+        .then(function (res) {
+          if (!res.ok) throw new Error("Não foi possível ler o CSV (HTTP " + res.status + ").");
+          return res.text();
+        })
+        .then(function (text) {
+          var parsed = parseRows(text);
+          allRowsParsed = parsed.rows;
+          fillSelect(baseFilterCategoria, parsed.categorias, "Todas as categorias");
+          fillSelect(controlEstado, parsed.estados, "Todos os estados");
+          reportFilters.hidden = false;
+          metaEl.hidden = false;
+          arquivoMeta.textContent = "Fonte: " + CSV_NAME;
+          chartPanel.hidden = false;
+
+          rebuildFromFilters();
+        })
+        .catch(function (err) {
+          stateEl.textContent = err.message || "Falha ao carregar o arquivo.";
+          stateEl.classList.add("error");
+          totalEl.textContent = "—";
+        });
+    })();
+  </script>
+</body>
+</html>
